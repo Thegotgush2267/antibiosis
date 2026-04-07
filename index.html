@@ -310,6 +310,99 @@
             80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
             100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); visibility: hidden; }
         }
+
+        .contributors-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 40;
+            background: #1a2a22cc;
+            backdrop-filter: blur(8px);
+            border: 1px solid #6fcf97;
+            border-radius: 50px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: #c1f2d5;
+            font-family: monospace;
+            font-weight: bold;
+            pointer-events: auto;
+            transition: 0.2s;
+        }
+
+        .contributors-btn:hover {
+            background: #2e4638;
+        }
+
+        .contributors-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 250;
+        }
+
+        .contributors-modal.show {
+            display: flex;
+        }
+
+        .contributors-content {
+            background: #1d2622;
+            border: 2px solid #6fcf97;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            text-align: center;
+            color: #c1f2d5;
+            font-family: monospace;
+        }
+
+        .contributors-content h2 {
+            color: #b9f6ca;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .contributor-item {
+            margin: 15px 0;
+            padding: 10px;
+            background: #0f1810;
+            border-radius: 8px;
+            border-left: 3px solid #6fcf97;
+        }
+
+        .contributor-item a {
+            color: #8dd3c7;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .contributor-item a:hover {
+            color: #b9f6ca;
+        }
+
+        .close-modal-btn {
+            margin-top: 20px;
+            background: #2c4638;
+            border: 1px solid #6fcf97;
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: #c1f2d5;
+            font-family: monospace;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .close-modal-btn:hover {
+            background: #3f6a55;
+        }
     </style>
 </head>
 <body>
@@ -340,6 +433,27 @@
 </div>
 
 <div class="sound-toggle" id="soundToggle">🔊 SOUND ON</div>
+
+<button class="contributors-btn" id="contributorsBtn">👥 CONTRIBUTORS</button>
+
+<div class="contributors-modal" id="contributorsModal">
+    <div class="contributors-content">
+        <h2>👥 CONTRIBUTORS</h2>
+        <div class="contributor-item">
+            <p><strong>Gehans</strong></p>
+            <a href="https://github.com/Thegotgush2267" target="_blank">github.com/gehan</a>
+        </div>
+        <div class="contributor-item">
+            <p><strong>Aadidev</strong></p>
+            <a href="https://github.com/aadidev11" target="_blank">github.com/aadi</a>
+        </div>
+        <div class="contributor-item">
+            <p><strong>Game Repo</strong></p>
+            <a href="https://github.com/Thegotgush2267/antibiosis" target="_blank">github.com/Thegotgush2267/antibiosis</a>
+        </div>
+        <button class="close-modal-btn" id="closeContributorsBtn">✕ CLOSE</button>
+    </div>
+</div>
 
 <script>
     (function(){
@@ -710,10 +824,10 @@
             }
         }
         
-        // ----- CHEAT CODE: "gehans" ------
+        // ----- CHEAT CODES: "gehans" and "aadidev11" ------
         let cheatBuffer = "";
-        const secretCode = "gehans";
-        
+        const secretCodes = ["gehans", "axdgg"];
+
         function showCheatPopupAndReward() {
             if (!gameActive) return;
             // Add visual popup
@@ -744,11 +858,13 @@
             // only letters a-z
             if (key.length === 1 && /[a-z]/i.test(key)) {
                 cheatBuffer += key;
-                // keep buffer length no more than secret length
-                if (cheatBuffer.length > secretCode.length) {
-                    cheatBuffer = cheatBuffer.slice(-secretCode.length);
+                // keep buffer length no more than longest secret code length
+                const maxCodeLength = Math.max(...secretCodes.map(code => code.length));
+                if (cheatBuffer.length > maxCodeLength) {
+                    cheatBuffer = cheatBuffer.slice(-maxCodeLength);
                 }
-                if (cheatBuffer === secretCode) {
+                // check if buffer matches any secret code
+                if (secretCodes.includes(cheatBuffer)) {
                     showCheatPopupAndReward();
                     cheatBuffer = ""; // reset after cheat to avoid repeated triggers
                 }
@@ -971,8 +1087,8 @@
                 🌱 Keep pollution below 95% to survive.<br>
                 💰 Tech Eras: $1k → $5k → $10k → $100k<br>
                 🔊 Sound effects included.<br>
-                ⚡ Negative power = income penalty.<br>
-                🕵️ SECRET: type "gehans" for a massive money boost!</p>
+                ⚡ Negative power = income penalty.</p>
+                😊 Your Support is Highly Appreciated! 😊<br><br>
                 <button class="restart-btn" id="startBtn">▶ START INDUSTRY</button>
             </div>`;
             document.body.appendChild(menuDiv);
@@ -994,6 +1110,25 @@
                 }
             } else {
                 btn.innerHTML = '🔇 SOUND OFF';
+            }
+        });
+
+        // Contributors modal
+        const contributorsBtn = document.getElementById('contributorsBtn');
+        const contributorsModal = document.getElementById('contributorsModal');
+        const closeContributorsBtn = document.getElementById('closeContributorsBtn');
+
+        contributorsBtn?.addEventListener('click', () => {
+            contributorsModal.classList.add('show');
+        });
+
+        closeContributorsBtn?.addEventListener('click', () => {
+            contributorsModal.classList.remove('show');
+        });
+
+        contributorsModal?.addEventListener('click', (e) => {
+            if (e.target === contributorsModal) {
+                contributorsModal.classList.remove('show');
             }
         });
         
