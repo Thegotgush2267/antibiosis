@@ -3,4 +3,4 @@ Antibiosis: The Cost of Progress > An interactive strategy simulation built with
 
 ## 👥 Contributors
 - **Gehans Rodrigues** (@Thegotgush2267) - Lead Developer & Logic
-- **Aadidev** - Co-Developer & Environmental Research
+- **Aadidev** (@aadidev11) - Co-Developer & Environmental Research
