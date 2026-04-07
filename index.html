@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Antibiosis: The Cost of Progress — Fullscreen Wasteland</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', 'VT323', monospace;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            z-index: 0;
+        }
+
+        .top-meters {
+            position: fixed;
+            top: 18px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            z-index: 20;
+            pointer-events: none;
+            font-weight: bold;
+            text-shadow: 0 0 8px black;
+        }
+
+        .meter {
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 0.5rem 1.4rem;
+            border: 1px solid rgba(100, 200, 120, 0.5);
+            font-family: monospace;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            color: #e2ffd6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .meter span {
+            color: #f9e45b;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        .bottom-ribbon {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0c0f16e6;
+            backdrop-filter: blur(16px);
+            border-top: 2px solid #3a6b4e;
+            padding: 0.8rem 1.5rem;
+            z-index: 30;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            justify-content: space-between;
+            align-items: flex-start;
+            font-family: monospace;
+            box-shadow: 0 -8px 25px rgba(0,0,0,0.6);
+            pointer-events: auto;
+        }
+
+        .ribbon-col {
+            background: #00000066;
+            border-radius: 1.5rem;
+            padding: 0.5rem 0.8rem;
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .ribbon-col h4 {
+            color: #b9f6ca;
+            margin: 0 0 6px 0;
+            font-size: 0.85rem;
+            border-left: 3px solid #6fcf97;
+            padding-left: 8px;
+        }
+
+        .machine-list, .tech-list {
+            max-height: 200px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+        }
+
+        .machine-card {
+            background: #1e2822;
+            border: 1px solid #4e705a;
+            border-radius: 1rem;
+            padding: 0.4rem 0.6rem;
+        }
+
+        .machine-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .machine-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .buy-btn, .sell-btn {
+            background: #2c4638;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.2rem 0.8rem;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.05s linear;
+            color: #e0f0e0;
+        }
+
+        .buy-btn:hover:not(.disabled-btn), .sell-btn:hover:not(.disabled-btn) {
+            background: #3f6a55;
+            transform: scale(0.97);
+        }
+
+        .disabled-btn {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #1a2a22;
+        }
+
+        .machine-stats {
+            font-size: 0.65rem;
+            color: #b8e0c2;
+            margin-top: 4px;
+        }
+
+        .tech-btn {
+            background: #1e2822;
+            border: 1px solid #4e705a;
+            border-radius: 1rem;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.7rem;
+            color: #e0f0e0;
+            cursor: pointer;
+            transition: 0.05s linear;
+        }
+
+        .tech-btn:hover:not(.disabled) {
+            background: #2e4638;
+            transform: scale(0.99);
+        }
+
+        .disabled {
+            opacity: 0.5;
+            filter: grayscale(0.3);
+            cursor: not-allowed;
+        }
+
+        .scrub-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .carbon-btn {
+            background: #1f3b2c;
+            border: none;
+            border-radius: 2rem;
+            padding: 0.3rem 1rem;
+            font-family: monospace;
+            font-weight: bold;
+            color: #c1f2d5;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+
+        .warning-text {
+            font-size: 0.65rem;
+            color: #ffb16f;
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        .sound-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 40;
+            background: #1a2a22cc;
+            backdrop-filter: blur(8px);
+            border: 1px solid #6fcf97;
+            border-radius: 50px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            color: #c1f2d5;
+            font-family: monospace;
+            font-weight: bold;
+            pointer-events: auto;
+        }
+
+        .sound-toggle:hover {
+            background: #2e4638;
+        }
+
+        .gameover-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .gameover-card {
+            background: #1d1b16;
+            border: 4px solid #b34e4e;
+            border-radius: 2rem;
+            padding: 2rem;
+            text-align: center;
+            color: #ffd7a0;
+        }
+
+        .restart-btn {
+            background: #5e3a2c;
+            border: none;
+            padding: 10px 25px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 40px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #1a241f; }
+        ::-webkit-scrollbar-thumb { background: #5d8b6e; }
+
+        .locked-badge {
+            background: #8b3c2c;
+            font-size: 0.6rem;
+            border-radius: 12px;
+            padding: 0px 5px;
+            margin-left: 6px;
+        }
+        
+        .unlock-icon {
+            color: #6fcf97;
+            font-size: 0.65rem;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div class="top-meters">
+    <div class="meter">💰 <span id="moneyDisplay">0</span></div>
+    <div class="meter">⚡ POWER <span id="powerDisplay">0</span> / <span id="powerCap">0</span></div>
+    <div class="meter">☠️ POLLUTION <span id="pollutionDisplay">0</span>%</div>
+    <div class="meter">🔬 TECH ERA <span id="techLevelDisplay">0</span></div>
+</div>
+
+<div class="bottom-ribbon" id="gameUI">
+    <div class="ribbon-col">
+        <h4>🏭 MACHINES (sell for 70% of buy cost)</h4>
+        <div class="machine-list" id="machineShop"></div>
+    </div>
+    <div class="ribbon-col">
+        <h4>⚡ RESEARCH (unlocks advanced machines)</h4>
+        <div class="tech-list" id="techShop"></div>
+        <div class="scrub-buttons">
+            <button class="carbon-btn" id="industrialCC">🏭 INDUSTRIAL CAPTURE</button>
+            <button class="carbon-btn" id="bioCC">🌿 BIOLOGICAL CAPTURE</button>
+        </div>
+        <div class="warning-text">💨 reduction: <span id="activeReduction">0</span>/sec &nbsp;| ⚠️ negative power = income cut</div>
+    </div>
+</div>
+
+<div class="sound-toggle" id="soundToggle">🔊 SOUND ON</div>
+
+<script>
+    (function(){
+        // ==================== AUDIO SYSTEM ====================
+        let soundEnabled = true;
+        let audioContext = null;
+        
+        function initAudio() {
+            if (audioContext) return;
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        function playBeep(frequency, duration, volume = 0.3, type = 'sine') {
+            if (!soundEnabled || !audioContext) return;
+            try {
+                const now = audioContext.currentTime;
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.type = type;
+                oscillator.frequency.value = frequency;
+                gainNode.gain.setValueAtTime(volume, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+                oscillator.start();
+                oscillator.stop(now + duration);
+            } catch(e) { console.log("audio error", e); }
+        }
+        
+        function playPurchase() {
+            playBeep(660, 0.12, 0.25, 'sine');
+            setTimeout(() => playBeep(880, 0.1, 0.2, 'sine'), 100);
+        }
+        
+        function playSell() {
+            playBeep(440, 0.1, 0.2, 'sine');
+            setTimeout(() => playBeep(349, 0.12, 0.2, 'sine'), 80);
+        }
+        
+        function playTechUnlock() {
+            playBeep(523.25, 0.15, 0.3, 'sine');
+            setTimeout(() => playBeep(659.25, 0.15, 0.3, 'sine'), 120);
+            setTimeout(() => playBeep(783.99, 0.3, 0.25, 'sine'), 250);
+        }
+        
+        function playPollutionWarning() {
+            if (!soundEnabled || !audioContext) return;
+            playBeep(220, 0.2, 0.35, 'sawtooth');
+            setTimeout(() => playBeep(174.61, 0.25, 0.3, 'sawtooth'), 200);
+        }
+        
+        function playGameOver() {
+            if (!soundEnabled || !audioContext) return;
+            playBeep(130.81, 0.8, 0.4, 'sawtooth');
+            setTimeout(() => playBeep(98, 1.2, 0.35, 'sawtooth'), 400);
+        }
+        
+        function playCaptureToggle(active) {
+            if (active) {
+                playBeep(523.25, 0.1, 0.2, 'sine');
+                playBeep(659.25, 0.12, 0.2, 'sine');
+            } else {
+                playBeep(392, 0.1, 0.2, 'sine');
+                playBeep(349.23, 0.1, 0.2, 'sine');
+            }
+        }
+        
+        function playMoneyTick(amount) {
+            if (!soundEnabled || !audioContext) return;
+            if (amount > 50) {
+                playBeep(440, 0.05, 0.1, 'sine');
+            }
+        }
+        
+        let lastPollutionWarning = 0;
+        let ambientInterval = null;
+        
+        function startAmbientSound() {
+            if (ambientInterval) clearInterval(ambientInterval);
+            ambientInterval = setInterval(() => {
+                if (!soundEnabled || !audioContext || !gameActive) return;
+                let pollution = pollutionPercent / 100;
+                if (pollution > 0.6) {
+                    if (Math.random() < 0.08) {
+                        playBeep(100 + Math.random() * 80, 0.3, 0.08, 'triangle');
+                    }
+                }
+            }, 4000);
+        }
+        
+        // ==================== GAME DATA ====================
+        const MACHINES_DB = [
+            { id: "solar", name: "☀️ Solar Panel", baseCost: 70, income: 9, pollution: 0, powerGen: 6, powerUse: 0, operatingCost: 0, reqEra: 0, reqTech: null, desc: "clean startup" },
+            { id: "wind", name: "🌬️ Wind Turbine", baseCost: 130, income: 14, pollution: 0, powerGen: 8, powerUse: 0, operatingCost: 0, reqEra: 0, reqTech: null, desc: "steady breeze" },
+            { id: "coal_drill", name: "⛏️ Coal Drill", baseCost: 160, income: 22, pollution: 3, powerUse: 4, operatingCost: 3, reqEra: 0, reqTech: null, desc: "dirty but cheap" },
+            { id: "bio_plant", name: "🌾 Biomass Reactor", baseCost: 350, income: 35, pollution: 4, powerUse: 3, operatingCost: 5, reqEra: 1, reqTech: null, desc: "unlocked at Era 1" },
+            { id: "clean_plant", name: "♻️ Clean Coal", baseCost: 580, income: 52, pollution: 6, powerUse: 5, operatingCost: 8, reqEra: 1, reqTech: null, desc: "reduced emissions" },
+            { id: "gas_hybrid", name: "💨 Hybrid Turbine", baseCost: 1100, income: 92, pollution: 9, powerUse: 7, operatingCost: 12, reqEra: 2, reqTech: null, desc: "unlocked at Era 2" },
+            { id: "quantum_eco", name: "⚡ Quantum Node", baseCost: 4000, income: 210, pollution: 12, powerUse: 12, operatingCost: 22, reqEra: 3, reqTech: "quantum_core", desc: "requires Quantum Stabilizer" },
+            { id: "fusion_clean", name: "⚛️ Fusion Core", baseCost: 4500, income: 110, pollution: 1, powerGen: 38, operatingCost: 0, reqEra: 3, reqTech: "quantum_core", desc: "requires Quantum Stabilizer" },
+            { id: "terra_rig", name: "🌍 Terra Extractor", baseCost: 13000, income: 540, pollution: 28, powerUse: 20, operatingCost: 45, reqEra: 4, reqTech: "terra_pact", desc: "requires Regen Pact" }
+        ];
+        
+        const TECH_UPGRADES = [
+            { id: "eff1", name: "🔧 Efficiency Core", baseCost: 480, effect: { incomeMult: 1.15, desc: "+15% all income" }, reqEra: 0, purchased: false, unlocksMachine: null },
+            { id: "eff2", name: "🌀 Scrubber Tech", baseCost: 1300, effect: { pollutionReduction: 0.22, desc: "-22% pollution gen" }, reqEra: 1, purchased: false, unlocksMachine: null },
+            { id: "powerBoost", name: "🔋 Supergrid", baseCost: 2600, effect: { powerGenBonus: 14, desc: "+14 global power" }, reqEra: 2, purchased: false, unlocksMachine: null },
+            { id: "bio_upgrade", name: "🌱 Mycelium Boost", baseCost: 5000, effect: { bioCaptureBoost: 7, desc: "Biological capture +7 removal" }, reqEra: 2, purchased: false, unlocksMachine: null },
+            { id: "quantum_core", name: "💎 Quantum Stabilizer", baseCost: 17000, effect: { incomeMult: 1.28, desc: "+28% total income" }, reqEra: 3, purchased: false, unlocksMachine: "quantum_eco" },
+            { id: "terra_pact", name: "🌍 Regen Pact", baseCost: 42000, effect: { pollutionDecay: 0.45, desc: "Passive -0.45 pollution/sec" }, reqEra: 4, purchased: false, unlocksMachine: "terra_rig" }
+        ];
+        
+        // Track which techs have unlocked machines
+        let unlockedMachinesFromTech = new Set();
+        
+        let owned = {};
+        MACHINES_DB.forEach(m => { owned[m.id] = 0; });
+        
+        let money = 450.0;
+        let pollutionPercent = 10.0;
+        let industrialActive = false;
+        let biologicalActive = false;
+        let industrialCostSec = 42;
+        let bioCostSec = 15;
+        let industrialPollutionRemoval = 14;
+        let biologicalPollutionRemoval = 5;
+        let gameActive = true;
+        let gameLoopInterval = null;
+        let currentTechEra = 0;
+        
+        let globalIncomeMultiplier = 1.0;
+        let globalPollutionReductionPercent = 0.0;
+        let extraPowerBonus = 0;
+        let bioCaptureBonus = 0;
+        let passivePollutionDecay = 0.0;
+        
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const moneySpan = document.getElementById('moneyDisplay');
+        const powerSpan = document.getElementById('powerDisplay');
+        const powerCapSpan = document.getElementById('powerCap');
+        const pollutionSpan = document.getElementById('pollutionDisplay');
+        const techLevelSpan = document.getElementById('techLevelDisplay');
+        const activeReductionSpan = document.getElementById('activeReduction');
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawEnvironment();
+        }
+        window.addEventListener('resize', () => { resizeCanvas(); drawEnvironment(); });
+        
+        function updateTechEra() {
+            let newEra = 0;
+            if (money >= 100000) newEra = 4;
+            else if (money >= 10000) newEra = 3;
+            else if (money >= 5000) newEra = 2;
+            else if (money >= 1000) newEra = 1;
+            if (newEra !== currentTechEra && newEra > currentTechEra) {
+                playTechUnlock();
+            }
+            currentTechEra = newEra;
+            techLevelSpan.innerText = currentTechEra;
+            renderMachineShop();
+            renderTechShop();
+        }
+        
+        function recalcModifiers() {
+            globalIncomeMultiplier = 1.0;
+            globalPollutionReductionPercent = 0.0;
+            extraPowerBonus = 0;
+            bioCaptureBonus = 0;
+            passivePollutionDecay = 0.0;
+            
+            for(let t of TECH_UPGRADES) {
+                if(t.purchased) {
+                    if(t.effect.incomeMult) globalIncomeMultiplier *= t.effect.incomeMult;
+                    if(t.effect.pollutionReduction) globalPollutionReductionPercent += t.effect.pollutionReduction;
+                    if(t.effect.powerGenBonus) extraPowerBonus += t.effect.powerGenBonus;
+                    if(t.effect.bioCaptureBoost) bioCaptureBonus += t.effect.bioCaptureBoost;
+                    if(t.effect.pollutionDecay) passivePollutionDecay += t.effect.pollutionDecay;
+                    
+                    // Unlock machine if this tech has one and not yet unlocked
+                    if(t.unlocksMachine && !unlockedMachinesFromTech.has(t.unlocksMachine)) {
+                        unlockedMachinesFromTech.add(t.unlocksMachine);
+                        playTechUnlock();
+                    }
+                }
+            }
+            
+            biologicalPollutionRemoval = 5 + bioCaptureBonus;
+            const bioBtn = document.getElementById('bioCC');
+            if(bioBtn) bioBtn.innerHTML = `🌿 BIO CAPTURE ( -${biologicalPollutionRemoval} poll ) $${bioCostSec}/s`;
+        }
+        
+        function getMachineCost(m) { 
+            return Math.floor(m.baseCost * Math.pow(1.11, owned[m.id])); 
+        }
+        
+        function getMachineSellValue(m) {
+            let cost = getMachineCost(m);
+            return Math.floor(cost * 0.7);
+        }
+        
+        function isMachineUnlocked(machine) {
+            // Check era requirement
+            if(currentTechEra < machine.reqEra) return false;
+            // Check tech requirement
+            if(machine.reqTech) {
+                const requiredTech = TECH_UPGRADES.find(t => t.id === machine.reqTech);
+                if(!requiredTech || !requiredTech.purchased) return false;
+            }
+            return true;
+        }
+        
+        function buyMachine(machine) {
+            if(!gameActive) return false;
+            if(!isMachineUnlocked(machine)) return false;
+            let cost = getMachineCost(machine);
+            if(money >= cost) {
+                money -= cost;
+                owned[machine.id]++;
+                playPurchase();
+                updateUI();
+                updateTechEra();
+                drawEnvironment();
+                renderMachineShop();
+                return true;
+            }
+            return false;
+        }
+        
+        function sellMachine(machine) {
+            if(!gameActive) return false;
+            if(owned[machine.id] <= 0) return false;
+            let sellValue = getMachineSellValue(machine);
+            money += sellValue;
+            owned[machine.id]--;
+            playSell();
+            updateUI();
+            updateTechEra();
+            drawEnvironment();
+            renderMachineShop();
+            return true;
+        }
+        
+        function buyTechUpgrade(tech) {
+            if(!gameActive || tech.purchased) return false;
+            if(currentTechEra < tech.reqEra) return false;
+            if(money >= tech.baseCost) {
+                money -= tech.baseCost;
+                tech.purchased = true;
+                playTechUnlock();
+                recalcModifiers();
+                updateUI();
+                renderMachineShop();
+                renderTechShop();
+                return true;
+            }
+            return false;
+        }
+        
+        function updateUI() {
+            if(!gameActive) return;
+            moneySpan.innerText = Math.floor(Math.max(0, money));
+            pollutionSpan.innerText = Math.min(100, Math.floor(pollutionPercent));
+            let totalGen = 0;
+            for(let m of MACHINES_DB) if(m.powerGen) totalGen += owned[m.id] * m.powerGen;
+            let totalConsumption = 0;
+            for(let m of MACHINES_DB) if(m.powerUse && !m.powerGen) totalConsumption += owned[m.id] * m.powerUse;
+            let netPower = totalGen + extraPowerBonus - totalConsumption;
+            powerSpan.innerText = netPower;
+            powerCapSpan.innerText = totalGen + extraPowerBonus;
+            let reduction = (industrialActive ? industrialPollutionRemoval : 0) + (biologicalActive ? biologicalPollutionRemoval : 0);
+            activeReductionSpan.innerText = reduction;
+        }
+        
+        function renderMachineShop() {
+            const container = document.getElementById('machineShop');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            for(let m of MACHINES_DB) {
+                let cost = getMachineCost(m);
+                let sellVal = getMachineSellValue(m);
+                let affordable = money >= cost;
+                let unlocked = isMachineUnlocked(m);
+                let canSell = owned[m.id] > 0;
+                
+                const card = document.createElement('div');
+                card.className = 'machine-card';
+                
+                let lockReason = "";
+                if(!unlocked) {
+                    if(currentTechEra < m.reqEra) lockReason = ` (Need Era ${m.reqEra}+)`;
+                    else if(m.reqTech) {
+                        const tech = TECH_UPGRADES.find(t => t.id === m.reqTech);
+                        lockReason = ` (Requires: ${tech ? tech.name : m.reqTech})`;
+                    }
+                }
+                
+                card.innerHTML = `
+                    <div class="machine-row">
+                        <div><b>${m.name}</b>${lockReason}</div>
+                        <div class="machine-actions">
+                            ${unlocked ? `<button class="buy-btn ${!affordable || !gameActive ? 'disabled-btn' : ''}" data-buy="${m.id}">💰${cost}</button>` : `<button class="buy-btn disabled-btn" disabled>🔒${cost}</button>`}
+                            ${unlocked ? `<button class="sell-btn ${!canSell ? 'disabled-btn' : ''}" data-sell="${m.id}">💸-${sellVal}</button>` : `<button class="sell-btn disabled-btn" disabled>💸--</button>`}
+                        </div>
+                    </div>
+                    <div class="machine-stats">
+                        +${m.income}/s &nbsp; ${m.powerGen ? `🔋+${m.powerGen}` : m.powerUse ? `⚡-${m.powerUse}` : ''} &nbsp; ☠️+${m.pollution} &nbsp; ${m.operatingCost > 0 ? `💸 ${m.operatingCost}/s` : `⚡ free`}
+                        &nbsp; | owned: ${owned[m.id]}
+                    </div>
+                `;
+                
+                if(unlocked) {
+                    const buyBtn = card.querySelector(`[data-buy="${m.id}"]`);
+                    if(buyBtn && !buyBtn.classList.contains('disabled-btn')) {
+                        buyBtn.addEventListener('click', (e) => { e.stopPropagation(); buyMachine(m); });
+                    }
+                    const sellBtn = card.querySelector(`[data-sell="${m.id}"]`);
+                    if(sellBtn && !sellBtn.classList.contains('disabled-btn')) {
+                        sellBtn.addEventListener('click', (e) => { e.stopPropagation(); sellMachine(m); });
+                    }
+                }
+                container.appendChild(card);
+            }
+        }
+        
+        function renderTechShop() {
+            const container = document.getElementById('techShop');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            for(let t of TECH_UPGRADES) {
+                let affordable = money >= t.baseCost;
+                let techUnlock = currentTechEra >= t.reqEra;
+                let purchased = t.purchased;
+                let disabled = purchased || !affordable || !techUnlock || !gameActive;
+                
+                const btn = document.createElement('div');
+                btn.className = `tech-btn ${disabled ? 'disabled' : ''}`;
+                
+                let unlockMsg = "";
+                if(t.unlocksMachine) {
+                    const machine = MACHINES_DB.find(m => m.id === t.unlocksMachine);
+                    if(machine && !purchased) unlockMsg = `<div class="unlock-icon">🔓 Unlocks: ${machine.name}</div>`;
+                }
+                
+                btn.innerHTML = `
+                    <div><b>${t.name}</b> ${t.reqEra>0 ? `(era ${t.reqEra})` : ''}</div>
+                    <div>✨ ${t.effect.desc}</div>
+                    ${unlockMsg}
+                    <div>💰 ${t.baseCost}$ ${purchased ? '✓ PURCHASED' : ''}</div>
+                `;
+                
+                if(!disabled && !purchased) {
+                    btn.onclick = () => { buyTechUpgrade(t); };
+                }
+                container.appendChild(btn);
+            }
+        }
+        
+        function gameTick() {
+            if(!gameActive) return;
+            
+            // Calculate income
+            let rawIncome = 0;
+            for(let m of MACHINES_DB) rawIncome += owned[m.id] * m.income;
+            let totalIncome = rawIncome * globalIncomeMultiplier;
+            
+            // Calculate pollution generation
+            let totalPollutionGen = 0;
+            for(let m of MACHINES_DB) totalPollutionGen += owned[m.id] * m.pollution;
+            let pollutionAfterReduction = totalPollutionGen * (1 - Math.min(0.7, globalPollutionReductionPercent));
+            
+            // Operating costs
+            let totalOperatingCost = 0;
+            for(let m of MACHINES_DB) totalOperatingCost += owned[m.id] * (m.operatingCost || 0);
+            
+            // Carbon capture costs
+            let industrialOp = 0, bioOp = 0;
+            let totalPollutionRemoved = 0;
+            if(industrialActive) { totalPollutionRemoved += industrialPollutionRemoval; industrialOp = industrialCostSec; }
+            if(biologicalActive) { totalPollutionRemoved += biologicalPollutionRemoval; bioOp = bioCostSec; }
+            
+            // Turn off capture if can't afford
+            if(industrialActive && money < industrialOp) industrialActive = false;
+            if(biologicalActive && money < bioOp) biologicalActive = false;
+            
+            if(industrialActive) money -= industrialOp;
+            if(biologicalActive) money -= bioOp;
+            
+            // Pollution change
+            let netPollutionDelta = pollutionAfterReduction - totalPollutionRemoved - passivePollutionDecay;
+            let oldPollution = pollutionPercent;
+            pollutionPercent += netPollutionDelta * 0.17;
+            pollutionPercent = Math.min(100, Math.max(0, pollutionPercent));
+            
+            // Pollution warning sound
+            if (pollutionPercent > 70 && pollutionPercent > oldPollution && Date.now() - lastPollutionWarning > 3000) {
+                playPollutionWarning();
+                lastPollutionWarning = Date.now();
+            }
+            
+            // Power management
+            let totalGenPower = 0;
+            for(let m of MACHINES_DB) if(m.powerGen) totalGenPower += owned[m.id] * m.powerGen;
+            let totalUsedPower = 0;
+            for(let m of MACHINES_DB) if(m.powerUse && !m.powerGen) totalUsedPower += owned[m.id] * m.powerUse;
+            let netPower = totalGenPower + extraPowerBonus - totalUsedPower;
+            
+            if(netPower < 0) {
+                let penalty = Math.min(0.6, Math.abs(netPower) / (totalUsedPower + 0.1));
+                let lost = totalIncome * penalty * 0.7;
+                money -= lost;
+                if(money < 0) money = 0;
+            }
+            
+            // Apply income and costs
+            money += totalIncome;
+            money -= totalOperatingCost;
+            if(money < 0) money = 0;
+            
+            // Play money tick sound
+            if (totalIncome > 0) playMoneyTick(totalIncome);
+            
+            // Update UI and era
+            updateTechEra();
+            updateUI();
+            drawEnvironment();
+            
+            // Game over check
+            if(pollutionPercent >= 95.0 && gameActive === true) {
+                gameActive = false;
+                playGameOver();
+                if(gameLoopInterval) clearInterval(gameLoopInterval);
+                showGameOver();
+            }
+        }
+        
+        function drawEnvironment() {
+            if(!ctx) return;
+            const w = canvas.width, h = canvas.height;
+            const pollute = Math.min(1.0, pollutionPercent / 100);
+            
+            // Sky gradient based on pollution
+            let grad = ctx.createLinearGradient(0, 0, 0, h*0.7);
+            if(pollute < 0.3) grad.addColorStop(0, "#b7d9e5"), grad.addColorStop(1, "#cce2bc");
+            else if(pollute < 0.65) grad.addColorStop(0, "#7e8c62"), grad.addColorStop(1, "#50583a");
+            else grad.addColorStop(0, "#2c2a24"), grad.addColorStop(1, "#141610");
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+            
+            // Hills
+            ctx.beginPath();
+            let hillColor = pollute > 0.6 ? "#2a3222" : (pollute > 0.3 ? "#5a7342" : "#7c9a5e");
+            ctx.fillStyle = hillColor;
+            ctx.moveTo(0, h*0.55);
+            for(let x=0; x<=w+30; x+=45) {
+                let yOff = Math.sin(x * 0.007) * 20 + Math.cos(x*0.012)*12;
+                let baseY = h*0.52 + yOff * (1 - pollute*0.5);
+                ctx.lineTo(x, baseY);
+            }
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.fill();
+            
+            // Trees that decay with pollution
+            for(let i=0; i<120; i++) {
+                let treeX = (i * 27) % w;
+                let treeBaseY = h*0.58 + Math.sin(i)*18;
+                let size = 14 + Math.sin(i)*7;
+                if(pollute > 0.8) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = "#3e2c1f";
+                    ctx.lineWidth = 3;
+                    ctx.moveTo(treeX, treeBaseY);
+                    ctx.lineTo(treeX-5, treeBaseY-size*0.45);
+                    ctx.lineTo(treeX+7, treeBaseY-size*0.65);
+                    ctx.stroke();
+                    ctx.fillStyle = "#4d3424";
+                    ctx.beginPath();
+                    ctx.arc(treeX-2, treeBaseY-size*0.5, 5, 0, Math.PI*2);
+                    ctx.fill();
+                } else if(pollute > 0.5) {
+                    ctx.fillStyle = `rgba(100, 80, 45, 0.8)`;
+                    ctx.beginPath();
+                    ctx.ellipse(treeX, treeBaseY-size*0.5, size*0.55, size*0.75, 0, 0, Math.PI*2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = `rgb(45, ${90 + Math.floor(60 * (1 - pollute))}, 45)`;
+                    ctx.beginPath();
+                    ctx.ellipse(treeX, treeBaseY-size*0.5, size*0.7, size*0.85, 0, 0, Math.PI*2);
+                    ctx.fill();
+                    ctx.fillStyle = "#7b5a3b";
+                    ctx.fillRect(treeX-2, treeBaseY-size*0.35, 5, size*0.55);
+                }
+            }
+            
+            // Smog overlay
+            if(pollute > 0.7) {
+                ctx.fillStyle = `rgba(20, 15, 10, ${(pollute-0.6)*1.2})`;
+                ctx.fillRect(0, 0, w, h);
+                for(let s=0;s<20;s++) {
+                    ctx.fillStyle = `rgba(200, 70, 40, 0.35)`;
+                    ctx.beginPath();
+                    ctx.ellipse(Math.random()*w, Math.random()*h*0.6, 16, 10, 0, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+            
+            ctx.fillStyle = `rgba(50, 45, 40, ${pollute * 0.55})`;
+            ctx.fillRect(0, 0, w, h);
+            
+            // Title
+            ctx.font = "bold 26px 'Courier New'";
+            ctx.fillStyle = pollute > 0.7 ? "#e0aa70" : "#f4f2dc";
+            ctx.fillText("⚙️ ANTIBIOSIS", 28, 65);
+        }
+        
+        function showGameOver() {
+            if(document.querySelector('.gameover-overlay')) return;
+            const div = document.createElement('div');
+            div.className = 'gameover-overlay';
+            div.innerHTML = `<div class="gameover-card"><h1>💀 SYSTEM COLLAPSE 💀</h1><p>Pollution reached 95% . No return.</p><button class="restart-btn" id="restartGameBtn">⟳ RESTART</button></div>`;
+            document.body.appendChild(div);
+            document.getElementById('restartGameBtn').addEventListener('click', () => location.reload());
+        }
+        
+        function startGame() {
+            gameActive = true;
+            money = 450;
+            pollutionPercent = 10;
+            industrialActive = false;
+            biologicalActive = false;
+            unlockedMachinesFromTech.clear();
+            owned = {};
+            MACHINES_DB.forEach(m => { owned[m.id] = 0; });
+            TECH_UPGRADES.forEach(t => t.purchased = false);
+            currentTechEra = 0;
+            recalcModifiers();
+            updateTechEra();
+            updateUI();
+            renderMachineShop();
+            renderTechShop();
+            drawEnvironment();
+            if(gameLoopInterval) clearInterval(gameLoopInterval);
+            gameLoopInterval = setInterval(() => gameTick(), 1000);
+            startAmbientSound();
+            
+            function anim() { 
+                if(gameActive) drawEnvironment(); 
+                requestAnimationFrame(anim); 
+            }
+            requestAnimationFrame(anim);
+        }
+        
+        function initStart() {
+            resizeCanvas();
+            const menuDiv = document.createElement('div');
+            menuDiv.className = 'gameover-overlay';
+            menuDiv.style.background = "rgba(0,0,0,0.95)";
+            menuDiv.innerHTML = `<div class="gameover-card" style="border-color:#6e9f7e;">
+                <h1>⚡ ANTIBIOSIS</h1>
+                <p>Build machines, manage pollution, research tech.<br>
+                🧪 NEW: Sell machines for 70% of buy cost!<br>
+                🔬 RESEARCH unlocks advanced machines!<br>
+                🌱 Keep pollution below 95% to survive.<br>
+                💰 Tech Eras: $1k → $5k → $10k → $100k<br>
+                🔊 Sound effects included.<br>
+                ⚡ Negative power = income penalty.</p>
+                <button class="restart-btn" id="startBtn">▶ START INDUSTRY</button>
+            </div>`;
+            document.body.appendChild(menuDiv);
+            document.getElementById('startBtn').addEventListener('click', () => { 
+                menuDiv.remove(); 
+                initAudio();
+                startGame(); 
+            });
+        }
+        
+        // Sound toggle
+        document.getElementById('soundToggle')?.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('soundToggle');
+            if (soundEnabled) {
+                btn.innerHTML = '🔊 SOUND ON';
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            } else {
+                btn.innerHTML = '🔇 SOUND OFF';
+            }
+        });
+        
+        document.getElementById('industrialCC')?.addEventListener('click', () => { 
+            if(gameActive) {
+                industrialActive = !industrialActive;
+                playCaptureToggle(industrialActive);
+                updateUI();
+            }
+        });
+        document.getElementById('bioCC')?.addEventListener('click', () => { 
+            if(gameActive) {
+                biologicalActive = !biologicalActive;
+                playCaptureToggle(biologicalActive);
+                updateUI();
+            }
+        });
+        
+        initStart();
+    })();
+</script>
+</body>
+</html>
